@@ -2244,8 +2244,8 @@ Note
 <p>Strategic awareness is useful, but eventually, you have to run the numbers. You need code that doesn’t panic when the data gets messy.</p>
 <p>This guide provides a practical framework for implementing two robust risk techniques in R: the <strong>Block Bootstrap</strong> (to handle volatility clustering) and <strong>Generalized Pareto Distribution (GPD)</strong> fitting (to model the extreme tail).</p>
 <p>A historic dataset containing daily Bitcoin (BTC) prices from 2021 through 2025 will be used for this simple example.</p>
-<section id="the-setup-preparing-the-environment" class="level2">
-<h2 class="anchored" data-anchor-id="the-setup-preparing-the-environment"><strong>The Setup: Preparing the Environment</strong></h2>
+<section id="the-setup-preparing-the-environment" class="level3">
+<h3 class="anchored" data-anchor-id="the-setup-preparing-the-environment"><strong>The Setup: Preparing the Environment</strong></h3>
 <p>First, data is loaded, and daily log returns are calculated. Unlike the “smooth” data often used in textbooks, this dataset captures historic crypto volatility, including the drawdown periods.</p>
 <div class="cell">
 <details class="code-fold">
@@ -2279,8 +2279,8 @@ Note
 </div>
 </div>
 </section>
-<section id="method-1-the-block-bootstrap" class="level2">
-<h2 class="anchored" data-anchor-id="method-1-the-block-bootstrap"><strong>Method 1: The Block Bootstrap</strong></h2>
+<section id="method-1-the-block-bootstrap" class="level3">
+<h3 class="anchored" data-anchor-id="method-1-the-block-bootstrap"><strong>Method 1: The Block Bootstrap</strong></h3>
 <p>Standard bootstrapping (shuffling data randomly) destroys the element of time. In crypto, bad days flock together. If Tuesday was a crash, Wednesday is likely to be volatile. If you shuffle the days randomly, you destroy this “autocorrelation” and underestimate the risk of a sustained drawdown.</p>
 <p>To fix this, we use the Block Bootstrap. We sample <em>blocks</em> of consecutive days (e.g., 20-day chunks) rather than single days. This preserves the “memory” of the market.</p>
 <div class="cell">
@@ -2354,8 +2354,8 @@ Note
 </div>
 </div>
 </section>
-<section id="method-2-fitting-the-gpd-extreme-value-theory" class="level2">
-<h2 class="anchored" data-anchor-id="method-2-fitting-the-gpd-extreme-value-theory"><strong>Method 2: Fitting the GPD (Extreme Value Theory)</strong></h2>
+<section id="method-2-fitting-the-gpd-extreme-value-theory" class="level3">
+<h3 class="anchored" data-anchor-id="method-2-fitting-the-gpd-extreme-value-theory"><strong>Method 2: Fitting the GPD (Extreme Value Theory)</strong></h3>
 <p>Bootstrapping is limited to historical data. If you want to ask, “What is the probability of a crash worse than anything we have seen in the last 5 years?”, you need to utilize Extreme Value Theory (EVT).</p>
 <p>We will use the Peaks Over Threshold (POT) method. We look only at the worst 5% of days and fit a curve specifically to them.</p>
 <div class="cell">
@@ -2420,8 +2420,8 @@ Note
 </div>
 </div>
 </section>
-<section id="the-bottom-line" class="level2">
-<h2 class="anchored" data-anchor-id="the-bottom-line"><strong>The Bottom Line</strong></h2>
+<section id="the-bottom-line" class="level3">
+<h3 class="anchored" data-anchor-id="the-bottom-line"><strong>The Bottom Line</strong></h3>
 <p>By running this code on the 2021–2025 dataset, we move from abstract philosophy to concrete risk management.</p>
 <ol type="1">
 <li><p><strong>Block Bootstrap</strong> revealed that volatility clustering increases your 99% VaR by over <strong>23%</strong> compared to standard models (from -7.09% to -8.77%).</p></li>
@@ -2918,7 +2918,7 @@ Note
 <span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>A historic dataset containing daily Bitcoin (BTC) prices from 2021 through 2025 will be used for this simple example.</span>
 <span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a><span class="fu">## **The Setup: Preparing the Environment**</span></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a><span class="fu">### **The Setup: Preparing the Environment**</span></span>
 <span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>First, data is loaded, and daily log returns are calculated. Unlike the “smooth” data often used in textbooks, this dataset captures historic crypto volatility, including the drawdown periods.</span>
 <span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a></span>
@@ -2947,7 +2947,7 @@ Note
 <span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">summary</span>(returns))</span>
 <span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a><span class="fu">## **Method 1: The Block Bootstrap**</span></span>
+<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a><span class="fu">### **Method 1: The Block Bootstrap**</span></span>
 <span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a>Standard bootstrapping (shuffling data randomly) destroys the element of time. In crypto, bad days flock together. If Tuesday was a crash, Wednesday is likely to be volatile. If you shuffle the days randomly, you destroy this “autocorrelation” and underestimate the risk of a sustained drawdown.</span>
 <span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a></span>
@@ -3007,7 +3007,7 @@ Note
 <span id="cb13-124"><a href="#cb13-124" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
 <span id="cb13-125"><a href="#cb13-125" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb13-126"><a href="#cb13-126" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-127"><a href="#cb13-127" aria-hidden="true" tabindex="-1"></a><span class="fu">## **Method 2: Fitting the GPD (Extreme Value Theory)**</span></span>
+<span id="cb13-127"><a href="#cb13-127" aria-hidden="true" tabindex="-1"></a><span class="fu">### **Method 2: Fitting the GPD (Extreme Value Theory)**</span></span>
 <span id="cb13-128"><a href="#cb13-128" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-129"><a href="#cb13-129" aria-hidden="true" tabindex="-1"></a>Bootstrapping is limited to historical data. If you want to ask, “What is the probability of a crash worse than anything we have seen in the last 5 years?”, you need to utilize Extreme Value Theory (EVT).</span>
 <span id="cb13-130"><a href="#cb13-130" aria-hidden="true" tabindex="-1"></a></span>
@@ -3056,7 +3056,7 @@ Note
 <span id="cb13-177"><a href="#cb13-177" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit_gpd, <span class="at">which =</span> <span class="dv">1</span>) <span class="co"># &#39;which=1&#39; usually plots Probability or Return Level</span></span>
 <span id="cb13-178"><a href="#cb13-178" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb13-179"><a href="#cb13-179" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-180"><a href="#cb13-180" aria-hidden="true" tabindex="-1"></a><span class="fu">## **The Bottom Line**</span></span>
+<span id="cb13-180"><a href="#cb13-180" aria-hidden="true" tabindex="-1"></a><span class="fu">### **The Bottom Line**</span></span>
 <span id="cb13-181"><a href="#cb13-181" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-182"><a href="#cb13-182" aria-hidden="true" tabindex="-1"></a>By running this code on the 2021–2025 dataset, we move from abstract philosophy to concrete risk management.</span>
 <span id="cb13-183"><a href="#cb13-183" aria-hidden="true" tabindex="-1"></a></span>
@@ -3065,6 +3065,7 @@ Note
 <span id="cb13-186"><a href="#cb13-186" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>**EVT** provided a mathematical confirmation of the heavy tail (\$<span class="sc">\\</span>xi = 0.061\$), proving that extreme losses in Bitcoin are structural features, not bugs.</span>
 <span id="cb13-187"><a href="#cb13-187" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-188"><a href="#cb13-188" aria-hidden="true" tabindex="-1"></a>When the market inevitably breaks, you won’t be relying on a Bell Curve that claims the event is impossible. You will be relying on a GPD curve that told you it was coming.</span>
+<span id="cb13-189"><a href="#cb13-189" aria-hidden="true" tabindex="-1"></a></span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
