@@ -1,7 +1,11 @@
-project:
-  title: "rQuarto_block_bootstrap_EVT"
+title: "Coding the Tail: Implementing Block Botstrap & Extreme Value Theory in R"
+execute:
+  warning: false
+  message: false
 format:
-    html:
-        theme: sandstone
-editor: visual
+  html: 
+    theme: sandstone
+    code-fold: true
+    code-tools: true
+    code-summary: "Show code"
 
