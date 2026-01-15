@@ -169,7 +169,7 @@ print(paste("Expected 1-in-100 Day Loss (EVT):", round(return_level, 4)))
 plot(fit_gpd, which = 1) # 'which=1' usually plots Probability or Return Level
 ```
 
-### **The Bottom Line**
+### **Conclusion**
 
 By running this code on the 2021–2025 dataset, we move from abstract philosophy to concrete risk management.
 
@@ -178,5 +178,18 @@ By running this code on the 2021–2025 dataset, we move from abstract philosoph
 2.  **EVT** provided a mathematical confirmation of the heavy tail (\$\\xi = 0.061\$), proving that extreme losses in Bitcoin are structural features, not bugs.
 
 When the market inevitably breaks, you won’t be relying on a Bell Curve that claims the event is impossible. You will be relying on a GPD curve that told you it was coming.
+
+
+::: {.appendix}
+
+##### **Session Information**
+
+<div style="font-size: 0.8em;">
+```{r}
+#| echo: false
+
+ sessionInfo() 
+```
+</div>
 
 
