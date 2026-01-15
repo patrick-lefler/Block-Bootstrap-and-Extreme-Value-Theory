@@ -2224,6 +2224,22 @@ vertical-align: -.125em;
 </header>
 
 
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Value at Risk (VaR) vs. Extreme Value Theory (EVT): A Summary</strong></p>
+<p><strong>Value at Risk (VaR)</strong> is the industry standard for measuring market risk. It answers a specific question: <em>“What is the maximum amount I am likely to lose over a set period, with a certain level of confidence (e.g., 99%)?”</em> It is excellent for summarizing “normal” market behavior and setting daily capital requirements. However, VaR has a critical blind spot: it tells you where the cliff edge is, but it tells you nothing about the fall. It ignores the severity of losses beyond its confidence threshold.</p>
+<p><strong>Extreme Value Theory (EVT)</strong> flips this logic. It ignores the “normal” days entirely and models only the extreme outliers—the worst 1% or 5% of events. By fitting a specific statistical curve (like the Generalized Pareto Distribution) to these rare disasters, EVT allows risk managers to extrapolate potential losses that exceed historical records.</p>
+<p><strong>The Key Difference:</strong> VaR measures the <strong>boundary</strong> of safety (“We are safe 99 days out of 100”). EVT measures the <strong>magnitude</strong> of the catastrophe (“On that 100th day, the loss could be infinite”). VaR provides comfort; EVT provides survival stress-testing.</p>
+</div>
+</div>
 <p>In previous articles, it has been shown that standard risk models fail because they assume markets behave normally…but they don’t. And some markets–including Bitcoin–behave badly at times. They exhibit “clustering,” where volatility tends to bunch together, and “fat tails,” where outliers are more frequent.</p>
 <p>Strategic awareness is useful, but eventually, you have to run the numbers. You need code that doesn’t panic when the data gets messy.</p>
 <p>This guide provides a practical framework for implementing two robust risk techniques in R: the <strong>Block Bootstrap</strong> (to handle volatility clustering) and <strong>Generalized Pareto Distribution (GPD)</strong> fitting (to model the extreme tail).</p>
@@ -2883,161 +2899,171 @@ vertical-align: -.125em;
 <span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="co">    embed-resources: true</span></span>
 <span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
 <span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>In previous articles, it has been shown that standard risk models fail because they assume markets behave normally…but they don’t. And some markets–including Bitcoin–behave badly at times. They exhibit “clustering,” where volatility tends to bunch together, and “fat tails,” where outliers are more frequent.</span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>Strategic awareness is useful, but eventually, you have to run the numbers. You need code that doesn’t panic when the data gets messy.</span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>This guide provides a practical framework for implementing two robust risk techniques in R: the **Block Bootstrap** (to handle volatility clustering) and **Generalized Pareto Distribution (GPD)** fitting (to model the extreme tail).</span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>A historic dataset containing daily Bitcoin (BTC) prices from 2021 through 2025 will be used for this simple example.</span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="fu">## **The Setup: Preparing the Environment**</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>::: callout-note</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>**Value at Risk (VaR) vs. Extreme Value Theory (EVT): A Summary**</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>**Value at Risk (VaR)** is the industry standard for measuring market risk. It answers a specific question: *&quot;What is the maximum amount I am likely to lose over a set period, with a certain level of confidence (e.g., 99%)?&quot;* It is excellent for summarizing &quot;normal&quot; market behavior and setting daily capital requirements. However, VaR has a critical blind spot: it tells you where the cliff edge is, but it tells you nothing about the fall. It ignores the severity of losses beyond its confidence threshold.</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>**Extreme Value Theory (EVT)** flips this logic. It ignores the &quot;normal&quot; days entirely and models only the extreme outliers—the worst 1% or 5% of events. By fitting a specific statistical curve (like the Generalized Pareto Distribution) to these rare disasters, EVT allows risk managers to extrapolate potential losses that exceed historical records.</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>**The Key Difference:** VaR measures the **boundary** of safety (&quot;We are safe 99 days out of 100&quot;). EVT measures the **magnitude** of the catastrophe (&quot;On that 100th day, the loss could be infinite&quot;). VaR provides comfort; EVT provides survival stress-testing.</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>First, data is loaded, and daily log returns are calculated. Unlike the “smooth” data often used in textbooks, this dataset captures historic crypto volatility, including the drawdown periods.</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>In previous articles, it has been shown that standard risk models fail because they assume markets behave normally…but they don’t. And some markets–including Bitcoin–behave badly at times. They exhibit “clustering,” where volatility tends to bunch together, and “fat tails,” where outliers are more frequent.</span>
 <span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="in">```{r setup}</span></span>
-<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(boot)   <span class="co"># For Bootstrapping</span></span>
-<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(evd)    <span class="co"># For Extreme Value Theory (GPD fitting)</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>Strategic awareness is useful, but eventually, you have to run the numbers. You need code that doesn’t panic when the data gets messy.</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>This guide provides a practical framework for implementing two robust risk techniques in R: the **Block Bootstrap** (to handle volatility clustering) and **Generalized Pareto Distribution (GPD)** fitting (to model the extreme tail).</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>A historic dataset containing daily Bitcoin (BTC) prices from 2021 through 2025 will be used for this simple example.</span>
 <span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">scipen =</span> <span class="dv">999</span>)</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="fu">## **The Setup: Preparing the Environment**</span></span>
 <span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the dataset</span></span>
-<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure the file is in your working directory</span></span>
-<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/btc_daily_prices_2021-2025.csv&quot;</span>)</span>
-<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Format dates and sort chronologically (vital for time-series bootstrapping)</span></span>
-<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>pricing.date <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(df<span class="sc">$</span>pricing.date)</span>
-<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df[<span class="fu">order</span>(df<span class="sc">$</span>pricing.date), ]</span>
-<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Daily Log Returns</span></span>
-<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a><span class="co"># We use log returns because they are additive over time</span></span>
-<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>returns <span class="ot">&lt;-</span> <span class="fu">diff</span>(<span class="fu">log</span>(df<span class="sc">$</span>close.price))</span>
-<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick inspection of the &quot;left tail&quot; (max losses)</span></span>
-<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">summary</span>(returns))</span>
-<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a><span class="fu">## **Method 1: The Block Bootstrap**</span></span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>First, data is loaded, and daily log returns are calculated. Unlike the “smooth” data often used in textbooks, this dataset captures historic crypto volatility, including the drawdown periods.</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a><span class="in">```{r setup}</span></span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(boot)   <span class="co"># For Bootstrapping</span></span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(evd)    <span class="co"># For Extreme Value Theory (GPD fitting)</span></span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">scipen =</span> <span class="dv">999</span>)</span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the dataset</span></span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure the file is in your working directory</span></span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/btc_daily_prices_2021-2025.csv&quot;</span>)</span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a><span class="co"># Format dates and sort chronologically (vital for time-series bootstrapping)</span></span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>pricing.date <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(df<span class="sc">$</span>pricing.date)</span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df[<span class="fu">order</span>(df<span class="sc">$</span>pricing.date), ]</span>
 <span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>Standard bootstrapping (shuffling data randomly) destroys the element of time. In crypto, bad days flock together. If Tuesday was a crash, Wednesday is likely to be volatile. If you shuffle the days randomly, you destroy this “autocorrelation” and underestimate the risk of a sustained drawdown.</span>
-<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>To fix this, we use the Block Bootstrap. We sample *blocks* of consecutive days (e.g., 20-day chunks) rather than single days. This preserves the “memory” of the market.</span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Daily Log Returns</span></span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a><span class="co"># We use log returns because they are additive over time</span></span>
+<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>returns <span class="ot">&lt;-</span> <span class="fu">diff</span>(<span class="fu">log</span>(df<span class="sc">$</span>close.price))</span>
 <span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the statistic we want to measure: 99% Value at Risk (VaR)</span></span>
-<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a><span class="co"># VaR is the threshold where losses exceed this value only 1% of the time</span></span>
-<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a>var_stat <span class="ot">&lt;-</span> <span class="cf">function</span>(data, indices) {</span>
-<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> data[indices]</span>
-<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">quantile</span>(d, <span class="fl">0.01</span>)) <span class="co"># 1st percentile (negative return)</span></span>
-<span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick inspection of the &quot;left tail&quot; (max losses)</span></span>
+<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">summary</span>(returns))</span>
+<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a><span class="fu">## **Method 1: The Block Bootstrap**</span></span>
+<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a>Standard bootstrapping (shuffling data randomly) destroys the element of time. In crypto, bad days flock together. If Tuesday was a crash, Wednesday is likely to be volatile. If you shuffle the days randomly, you destroy this “autocorrelation” and underestimate the risk of a sustained drawdown.</span>
+<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a>To fix this, we use the Block Bootstrap. We sample *blocks* of consecutive days (e.g., 20-day chunks) rather than single days. This preserves the “memory” of the market.</span>
 <span id="cb13-67"><a href="#cb13-67" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-68"><a href="#cb13-68" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the Block Bootstrap</span></span>
-<span id="cb13-69"><a href="#cb13-69" aria-hidden="true" tabindex="-1"></a><span class="co"># &#39;R&#39; = 10,000 resamples (alternative histories)</span></span>
-<span id="cb13-70"><a href="#cb13-70" aria-hidden="true" tabindex="-1"></a><span class="co"># &#39;l&#39; = 20 (we keep 20 consecutive days together to preserve volatility clusters)</span></span>
-<span id="cb13-71"><a href="#cb13-71" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
-<span id="cb13-72"><a href="#cb13-72" aria-hidden="true" tabindex="-1"></a>boot_results <span class="ot">&lt;-</span> <span class="fu">tsboot</span>(<span class="at">tseries =</span> returns, </span>
-<span id="cb13-73"><a href="#cb13-73" aria-hidden="true" tabindex="-1"></a>                       <span class="at">statistic =</span> var_stat, </span>
-<span id="cb13-74"><a href="#cb13-74" aria-hidden="true" tabindex="-1"></a>                       <span class="at">R =</span> <span class="dv">10000</span>, </span>
-<span id="cb13-75"><a href="#cb13-75" aria-hidden="true" tabindex="-1"></a>                       <span class="at">l =</span> <span class="dv">20</span>, </span>
-<span id="cb13-76"><a href="#cb13-76" aria-hidden="true" tabindex="-1"></a>                       <span class="at">sim =</span> <span class="st">&quot;fixed&quot;</span>)</span>
+<span id="cb13-70"><a href="#cb13-70" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb13-71"><a href="#cb13-71" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the statistic we want to measure: 99% Value at Risk (VaR)</span></span>
+<span id="cb13-72"><a href="#cb13-72" aria-hidden="true" tabindex="-1"></a><span class="co"># VaR is the threshold where losses exceed this value only 1% of the time</span></span>
+<span id="cb13-73"><a href="#cb13-73" aria-hidden="true" tabindex="-1"></a>var_stat <span class="ot">&lt;-</span> <span class="cf">function</span>(data, indices) {</span>
+<span id="cb13-74"><a href="#cb13-74" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> data[indices]</span>
+<span id="cb13-75"><a href="#cb13-75" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">quantile</span>(d, <span class="fl">0.01</span>)) <span class="co"># 1st percentile (negative return)</span></span>
+<span id="cb13-76"><a href="#cb13-76" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb13-77"><a href="#cb13-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-78"><a href="#cb13-78" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract the bootstrapped VaR values</span></span>
-<span id="cb13-79"><a href="#cb13-79" aria-hidden="true" tabindex="-1"></a>boot_vars <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">VaR =</span> boot_results<span class="sc">$</span>t)</span>
-<span id="cb13-80"><a href="#cb13-80" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-81"><a href="#cb13-81" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare with the Standard Normal VaR (Gaussian assumption)</span></span>
-<span id="cb13-82"><a href="#cb13-82" aria-hidden="true" tabindex="-1"></a>mean_return <span class="ot">&lt;-</span> <span class="fu">mean</span>(returns)</span>
-<span id="cb13-83"><a href="#cb13-83" aria-hidden="true" tabindex="-1"></a>std_dev <span class="ot">&lt;-</span> <span class="fu">sd</span>(returns)</span>
-<span id="cb13-84"><a href="#cb13-84" aria-hidden="true" tabindex="-1"></a>normal_var <span class="ot">&lt;-</span> <span class="fu">qnorm</span>(<span class="fl">0.01</span>, <span class="at">mean =</span> mean_return, <span class="at">sd =</span> std_dev)</span>
-<span id="cb13-85"><a href="#cb13-85" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-86"><a href="#cb13-86" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Normal VaR (99%):&quot;</span>, <span class="fu">round</span>(normal_var, <span class="dv">4</span>)))</span>
-<span id="cb13-87"><a href="#cb13-87" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Bootstrap VaR (99%):&quot;</span>, <span class="fu">round</span>(<span class="fu">mean</span>(boot_vars<span class="sc">$</span>VaR), <span class="dv">4</span>)))</span>
-<span id="cb13-88"><a href="#cb13-88" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-89"><a href="#cb13-89" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-78"><a href="#cb13-78" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the Block Bootstrap</span></span>
+<span id="cb13-79"><a href="#cb13-79" aria-hidden="true" tabindex="-1"></a><span class="co"># &#39;R&#39; = 10,000 resamples (alternative histories)</span></span>
+<span id="cb13-80"><a href="#cb13-80" aria-hidden="true" tabindex="-1"></a><span class="co"># &#39;l&#39; = 20 (we keep 20 consecutive days together to preserve volatility clusters)</span></span>
+<span id="cb13-81"><a href="#cb13-81" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb13-82"><a href="#cb13-82" aria-hidden="true" tabindex="-1"></a>boot_results <span class="ot">&lt;-</span> <span class="fu">tsboot</span>(<span class="at">tseries =</span> returns, </span>
+<span id="cb13-83"><a href="#cb13-83" aria-hidden="true" tabindex="-1"></a>                       <span class="at">statistic =</span> var_stat, </span>
+<span id="cb13-84"><a href="#cb13-84" aria-hidden="true" tabindex="-1"></a>                       <span class="at">R =</span> <span class="dv">10000</span>, </span>
+<span id="cb13-85"><a href="#cb13-85" aria-hidden="true" tabindex="-1"></a>                       <span class="at">l =</span> <span class="dv">20</span>, </span>
+<span id="cb13-86"><a href="#cb13-86" aria-hidden="true" tabindex="-1"></a>                       <span class="at">sim =</span> <span class="st">&quot;fixed&quot;</span>)</span>
+<span id="cb13-87"><a href="#cb13-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-88"><a href="#cb13-88" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract the bootstrapped VaR values</span></span>
+<span id="cb13-89"><a href="#cb13-89" aria-hidden="true" tabindex="-1"></a>boot_vars <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">VaR =</span> boot_results<span class="sc">$</span>t)</span>
 <span id="cb13-90"><a href="#cb13-90" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-91"><a href="#cb13-91" aria-hidden="true" tabindex="-1"></a>**The Results** When applied to the dataset, the difference is stark:</span>
-<span id="cb13-92"><a href="#cb13-92" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-93"><a href="#cb13-93" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Normal Prediction:** -7.09%</span>
-<span id="cb13-94"><a href="#cb13-94" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-95"><a href="#cb13-95" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Block Bootstrap Prediction:** -8.77%</span>
-<span id="cb13-96"><a href="#cb13-96" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-97"><a href="#cb13-97" aria-hidden="true" tabindex="-1"></a>The Gaussian model predicts a loss of 7% on a bad day. The Bootstrap — respecting the actual texture of BTC volatility — warns you that the real number is closer to 8.77%. That 23% difference (8.77/7.09) is where bankruptcies happen.</span>
+<span id="cb13-91"><a href="#cb13-91" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare with the Standard Normal VaR (Gaussian assumption)</span></span>
+<span id="cb13-92"><a href="#cb13-92" aria-hidden="true" tabindex="-1"></a>mean_return <span class="ot">&lt;-</span> <span class="fu">mean</span>(returns)</span>
+<span id="cb13-93"><a href="#cb13-93" aria-hidden="true" tabindex="-1"></a>std_dev <span class="ot">&lt;-</span> <span class="fu">sd</span>(returns)</span>
+<span id="cb13-94"><a href="#cb13-94" aria-hidden="true" tabindex="-1"></a>normal_var <span class="ot">&lt;-</span> <span class="fu">qnorm</span>(<span class="fl">0.01</span>, <span class="at">mean =</span> mean_return, <span class="at">sd =</span> std_dev)</span>
+<span id="cb13-95"><a href="#cb13-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-96"><a href="#cb13-96" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Normal VaR (99%):&quot;</span>, <span class="fu">round</span>(normal_var, <span class="dv">4</span>)))</span>
+<span id="cb13-97"><a href="#cb13-97" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Bootstrap VaR (99%):&quot;</span>, <span class="fu">round</span>(<span class="fu">mean</span>(boot_vars<span class="sc">$</span>VaR), <span class="dv">4</span>)))</span>
 <span id="cb13-98"><a href="#cb13-98" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-99"><a href="#cb13-99" aria-hidden="true" tabindex="-1"></a>**Visualizing the Divergence:** The density plot below visualizes this lie. The blue line (Normal) sits comfortably to the right, while the red mass (Bootstrap) shifts ominously to the left (greater loss).</span>
+<span id="cb13-99"><a href="#cb13-99" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb13-100"><a href="#cb13-100" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-103"><a href="#cb13-103" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb13-104"><a href="#cb13-104" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualization: The &quot;Risk Gap&quot; Density Plot</span></span>
-<span id="cb13-105"><a href="#cb13-105" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(boot_vars, <span class="fu">aes</span>(<span class="at">x =</span> VaR)) <span class="sc">+</span></span>
-<span id="cb13-106"><a href="#cb13-106" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">fill =</span> <span class="st">&quot;#E74C3C&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb13-107"><a href="#cb13-107" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="fu">aes</span>(<span class="at">xintercept =</span> normal_var), </span>
-<span id="cb13-108"><a href="#cb13-108" aria-hidden="true" tabindex="-1"></a>             <span class="at">color =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
-<span id="cb13-109"><a href="#cb13-109" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;The Risk Gap: Block Bootstrap vs. Normal Model&quot;</span>,</span>
-<span id="cb13-110"><a href="#cb13-110" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;Red Area = Bootstrap Prediction (Heavy Tail). Blue Line = Normal Prediction.&quot;</span>,</span>
-<span id="cb13-111"><a href="#cb13-111" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;99% VaR (Daily Return)&quot;</span>,</span>
-<span id="cb13-112"><a href="#cb13-112" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="sc">+</span></span>
-<span id="cb13-113"><a href="#cb13-113" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb13-114"><a href="#cb13-114" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-115"><a href="#cb13-115" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-116"><a href="#cb13-116" aria-hidden="true" tabindex="-1"></a><span class="fu">## **Method 2: Fitting the GPD (Extreme Value Theory)**</span></span>
-<span id="cb13-117"><a href="#cb13-117" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-118"><a href="#cb13-118" aria-hidden="true" tabindex="-1"></a>Bootstrapping is limited to historical data. If you want to ask, “What is the probability of a crash worse than anything we have seen in the last 5 years?”, you need to utilize Extreme Value Theory (EVT).</span>
-<span id="cb13-119"><a href="#cb13-119" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-120"><a href="#cb13-120" aria-hidden="true" tabindex="-1"></a>We will use the Peaks Over Threshold (POT) method. We look only at the worst 5% of days and fit a curve specifically to them.</span>
-<span id="cb13-121"><a href="#cb13-121" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-124"><a href="#cb13-124" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb13-125"><a href="#cb13-125" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Isolate the Tail (Peaks Over Threshold)</span></span>
-<span id="cb13-126"><a href="#cb13-126" aria-hidden="true" tabindex="-1"></a><span class="co"># We convert returns to losses (positive values) for the package</span></span>
-<span id="cb13-127"><a href="#cb13-127" aria-hidden="true" tabindex="-1"></a>losses <span class="ot">&lt;-</span> <span class="sc">-</span>returns</span>
-<span id="cb13-128"><a href="#cb13-128" aria-hidden="true" tabindex="-1"></a>threshold <span class="ot">&lt;-</span> <span class="fu">quantile</span>(losses, <span class="fl">0.95</span>) <span class="co"># Top 5% of losses</span></span>
+<span id="cb13-101"><a href="#cb13-101" aria-hidden="true" tabindex="-1"></a>**The Results** When applied to the dataset, the difference is stark:</span>
+<span id="cb13-102"><a href="#cb13-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-103"><a href="#cb13-103" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Normal Prediction:** -7.09%</span>
+<span id="cb13-104"><a href="#cb13-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-105"><a href="#cb13-105" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Block Bootstrap Prediction:** -8.77%</span>
+<span id="cb13-106"><a href="#cb13-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-107"><a href="#cb13-107" aria-hidden="true" tabindex="-1"></a>The Gaussian model predicts a loss of 7% on a bad day. The Bootstrap — respecting the actual texture of BTC volatility — warns you that the real number is closer to 8.77%. That 23% difference (8.77/7.09) is where bankruptcies happen.</span>
+<span id="cb13-108"><a href="#cb13-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-109"><a href="#cb13-109" aria-hidden="true" tabindex="-1"></a>**Visualizing the Divergence:** The density plot below visualizes this lie. The blue line (Normal) sits comfortably to the right, while the red mass (Bootstrap) shifts ominously to the left (greater loss).</span>
+<span id="cb13-110"><a href="#cb13-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-113"><a href="#cb13-113" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb13-114"><a href="#cb13-114" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualization: The &quot;Risk Gap&quot; Density Plot</span></span>
+<span id="cb13-115"><a href="#cb13-115" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(boot_vars, <span class="fu">aes</span>(<span class="at">x =</span> VaR)) <span class="sc">+</span></span>
+<span id="cb13-116"><a href="#cb13-116" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">fill =</span> <span class="st">&quot;#E74C3C&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb13-117"><a href="#cb13-117" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="fu">aes</span>(<span class="at">xintercept =</span> normal_var), </span>
+<span id="cb13-118"><a href="#cb13-118" aria-hidden="true" tabindex="-1"></a>             <span class="at">color =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb13-119"><a href="#cb13-119" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;The Risk Gap: Block Bootstrap vs. Normal Model&quot;</span>,</span>
+<span id="cb13-120"><a href="#cb13-120" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;Red Area = Bootstrap Prediction (Heavy Tail). Blue Line = Normal Prediction.&quot;</span>,</span>
+<span id="cb13-121"><a href="#cb13-121" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;99% VaR (Daily Return)&quot;</span>,</span>
+<span id="cb13-122"><a href="#cb13-122" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="sc">+</span></span>
+<span id="cb13-123"><a href="#cb13-123" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb13-124"><a href="#cb13-124" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-125"><a href="#cb13-125" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-126"><a href="#cb13-126" aria-hidden="true" tabindex="-1"></a><span class="fu">## **Method 2: Fitting the GPD (Extreme Value Theory)**</span></span>
+<span id="cb13-127"><a href="#cb13-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-128"><a href="#cb13-128" aria-hidden="true" tabindex="-1"></a>Bootstrapping is limited to historical data. If you want to ask, “What is the probability of a crash worse than anything we have seen in the last 5 years?”, you need to utilize Extreme Value Theory (EVT).</span>
 <span id="cb13-129"><a href="#cb13-129" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-130"><a href="#cb13-130" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Fit the Generalized Pareto Distribution (GPD)</span></span>
-<span id="cb13-131"><a href="#cb13-131" aria-hidden="true" tabindex="-1"></a>fit_gpd <span class="ot">&lt;-</span> <span class="fu">fpot</span>(losses, <span class="at">threshold =</span> threshold)</span>
-<span id="cb13-132"><a href="#cb13-132" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-133"><a href="#cb13-133" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the Shape Parameter (xi)</span></span>
-<span id="cb13-134"><a href="#cb13-134" aria-hidden="true" tabindex="-1"></a><span class="co"># If xi &gt; 0, it confirms a heavy tail (infinite variance potential)</span></span>
-<span id="cb13-135"><a href="#cb13-135" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(fit_gpd<span class="sc">$</span>estimate)</span>
-<span id="cb13-136"><a href="#cb13-136" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-137"><a href="#cb13-137" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-138"><a href="#cb13-138" aria-hidden="true" tabindex="-1"></a>**The Results:**</span>
+<span id="cb13-130"><a href="#cb13-130" aria-hidden="true" tabindex="-1"></a>We will use the Peaks Over Threshold (POT) method. We look only at the worst 5% of days and fit a curve specifically to them.</span>
+<span id="cb13-131"><a href="#cb13-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-134"><a href="#cb13-134" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb13-135"><a href="#cb13-135" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Isolate the Tail (Peaks Over Threshold)</span></span>
+<span id="cb13-136"><a href="#cb13-136" aria-hidden="true" tabindex="-1"></a><span class="co"># We convert returns to losses (positive values) for the package</span></span>
+<span id="cb13-137"><a href="#cb13-137" aria-hidden="true" tabindex="-1"></a>losses <span class="ot">&lt;-</span> <span class="sc">-</span>returns</span>
+<span id="cb13-138"><a href="#cb13-138" aria-hidden="true" tabindex="-1"></a>threshold <span class="ot">&lt;-</span> <span class="fu">quantile</span>(losses, <span class="fl">0.95</span>) <span class="co"># Top 5% of losses</span></span>
 <span id="cb13-139"><a href="#cb13-139" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-140"><a href="#cb13-140" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Shape Parameter (\$<span class="sc">\\</span>xi\$): 0.061</span>
-<span id="cb13-141"><a href="#cb13-141" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-142"><a href="#cb13-142" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Interpretation: The positive shape parameter confirms that Bitcoin’s distribution is heavy-tailed. It does not decay exponentially like a normal curve; it decays polynomially. This implies that “impossible” losses remain persistently possible.</span>
-<span id="cb13-143"><a href="#cb13-143" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-144"><a href="#cb13-144" aria-hidden="true" tabindex="-1"></a>Calculating the “Return Level”: We can now calculate the 100-Day Return Level — the loss-magnitude expected to be exceeded once every 100 days.</span>
-<span id="cb13-145"><a href="#cb13-145" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-148"><a href="#cb13-148" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb13-149"><a href="#cb13-149" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Calculate the Return Level (Manual Calculation)</span></span>
-<span id="cb13-150"><a href="#cb13-150" aria-hidden="true" tabindex="-1"></a><span class="co"># We extract parameters to solve: P(X &gt; x) = 1/Return_Period</span></span>
+<span id="cb13-140"><a href="#cb13-140" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Fit the Generalized Pareto Distribution (GPD)</span></span>
+<span id="cb13-141"><a href="#cb13-141" aria-hidden="true" tabindex="-1"></a>fit_gpd <span class="ot">&lt;-</span> <span class="fu">fpot</span>(losses, <span class="at">threshold =</span> threshold)</span>
+<span id="cb13-142"><a href="#cb13-142" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-143"><a href="#cb13-143" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the Shape Parameter (xi)</span></span>
+<span id="cb13-144"><a href="#cb13-144" aria-hidden="true" tabindex="-1"></a><span class="co"># If xi &gt; 0, it confirms a heavy tail (infinite variance potential)</span></span>
+<span id="cb13-145"><a href="#cb13-145" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(fit_gpd<span class="sc">$</span>estimate)</span>
+<span id="cb13-146"><a href="#cb13-146" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-147"><a href="#cb13-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-148"><a href="#cb13-148" aria-hidden="true" tabindex="-1"></a>**The Results:**</span>
+<span id="cb13-149"><a href="#cb13-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-150"><a href="#cb13-150" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Shape Parameter (\$<span class="sc">\\</span>xi\$): 0.061</span>
 <span id="cb13-151"><a href="#cb13-151" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-152"><a href="#cb13-152" aria-hidden="true" tabindex="-1"></a>scale_param <span class="ot">&lt;-</span> fit_gpd<span class="sc">$</span>estimate[<span class="st">&quot;scale&quot;</span>]</span>
-<span id="cb13-153"><a href="#cb13-153" aria-hidden="true" tabindex="-1"></a>shape_param <span class="ot">&lt;-</span> fit_gpd<span class="sc">$</span>estimate[<span class="st">&quot;shape&quot;</span>]</span>
-<span id="cb13-154"><a href="#cb13-154" aria-hidden="true" tabindex="-1"></a>pat <span class="ot">&lt;-</span> fit_gpd<span class="sc">$</span>pat  <span class="co"># Proportion Above Threshold (how often we are in the tail)</span></span>
+<span id="cb13-152"><a href="#cb13-152" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>Interpretation: The positive shape parameter confirms that Bitcoin’s distribution is heavy-tailed. It does not decay exponentially like a normal curve; it decays polynomially. This implies that “impossible” losses remain persistently possible.</span>
+<span id="cb13-153"><a href="#cb13-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-154"><a href="#cb13-154" aria-hidden="true" tabindex="-1"></a>Calculating the “Return Level”: We can now calculate the 100-Day Return Level — the loss-magnitude expected to be exceeded once every 100 days.</span>
 <span id="cb13-155"><a href="#cb13-155" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-156"><a href="#cb13-156" aria-hidden="true" tabindex="-1"></a><span class="co"># Define Risk Horizon: 1-in-100 days</span></span>
-<span id="cb13-157"><a href="#cb13-157" aria-hidden="true" tabindex="-1"></a>return_period <span class="ot">&lt;-</span> <span class="dv">100</span> </span>
-<span id="cb13-158"><a href="#cb13-158" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-159"><a href="#cb13-159" aria-hidden="true" tabindex="-1"></a><span class="co"># The GPD Return Level Formula</span></span>
-<span id="cb13-160"><a href="#cb13-160" aria-hidden="true" tabindex="-1"></a>return_level <span class="ot">&lt;-</span> threshold <span class="sc">+</span> (scale_param <span class="sc">/</span> shape_param) <span class="sc">*</span> ((return_period <span class="sc">*</span> pat)<span class="sc">^</span>shape_param <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb13-158"><a href="#cb13-158" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb13-159"><a href="#cb13-159" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Calculate the Return Level (Manual Calculation)</span></span>
+<span id="cb13-160"><a href="#cb13-160" aria-hidden="true" tabindex="-1"></a><span class="co"># We extract parameters to solve: P(X &gt; x) = 1/Return_Period</span></span>
 <span id="cb13-161"><a href="#cb13-161" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-162"><a href="#cb13-162" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Expected 1-in-100 Day Loss (EVT):&quot;</span>, <span class="fu">round</span>(return_level, <span class="dv">4</span>)))</span>
-<span id="cb13-163"><a href="#cb13-163" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-164"><a href="#cb13-164" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualization: Tail Plot (Log Scale)</span></span>
-<span id="cb13-165"><a href="#cb13-165" aria-hidden="true" tabindex="-1"></a><span class="co"># Shows how the GPD (Line) fits the actual historical crashes (Dots)</span></span>
-<span id="cb13-166"><a href="#cb13-166" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit_gpd, <span class="at">which =</span> <span class="dv">1</span>) <span class="co"># &#39;which=1&#39; usually plots Probability or Return Level</span></span>
-<span id="cb13-167"><a href="#cb13-167" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-162"><a href="#cb13-162" aria-hidden="true" tabindex="-1"></a>scale_param <span class="ot">&lt;-</span> fit_gpd<span class="sc">$</span>estimate[<span class="st">&quot;scale&quot;</span>]</span>
+<span id="cb13-163"><a href="#cb13-163" aria-hidden="true" tabindex="-1"></a>shape_param <span class="ot">&lt;-</span> fit_gpd<span class="sc">$</span>estimate[<span class="st">&quot;shape&quot;</span>]</span>
+<span id="cb13-164"><a href="#cb13-164" aria-hidden="true" tabindex="-1"></a>pat <span class="ot">&lt;-</span> fit_gpd<span class="sc">$</span>pat  <span class="co"># Proportion Above Threshold (how often we are in the tail)</span></span>
+<span id="cb13-165"><a href="#cb13-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-166"><a href="#cb13-166" aria-hidden="true" tabindex="-1"></a><span class="co"># Define Risk Horizon: 1-in-100 days</span></span>
+<span id="cb13-167"><a href="#cb13-167" aria-hidden="true" tabindex="-1"></a>return_period <span class="ot">&lt;-</span> <span class="dv">100</span> </span>
 <span id="cb13-168"><a href="#cb13-168" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-169"><a href="#cb13-169" aria-hidden="true" tabindex="-1"></a><span class="fu">## **The Bottom Line**</span></span>
-<span id="cb13-170"><a href="#cb13-170" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-171"><a href="#cb13-171" aria-hidden="true" tabindex="-1"></a>By running this code on the 2021–2025 dataset, we move from abstract philosophy to concrete risk management.</span>
-<span id="cb13-172"><a href="#cb13-172" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-173"><a href="#cb13-173" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>**Block Bootstrap** revealed that volatility clustering increases your 99% VaR by over **23%** compared to standard models (from -7.09% to -8.77%).</span>
-<span id="cb13-174"><a href="#cb13-174" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-175"><a href="#cb13-175" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>**EVT** provided a mathematical confirmation of the heavy tail (\$<span class="sc">\\</span>xi = 0.061\$), proving that extreme losses in Bitcoin are structural features, not bugs.</span>
-<span id="cb13-176"><a href="#cb13-176" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-177"><a href="#cb13-177" aria-hidden="true" tabindex="-1"></a>When the market inevitably breaks, you won’t be relying on a Bell Curve that claims the event is impossible. You will be relying on a GPD curve that told you it was coming.</span>
+<span id="cb13-169"><a href="#cb13-169" aria-hidden="true" tabindex="-1"></a><span class="co"># The GPD Return Level Formula</span></span>
+<span id="cb13-170"><a href="#cb13-170" aria-hidden="true" tabindex="-1"></a>return_level <span class="ot">&lt;-</span> threshold <span class="sc">+</span> (scale_param <span class="sc">/</span> shape_param) <span class="sc">*</span> ((return_period <span class="sc">*</span> pat)<span class="sc">^</span>shape_param <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb13-171"><a href="#cb13-171" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-172"><a href="#cb13-172" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Expected 1-in-100 Day Loss (EVT):&quot;</span>, <span class="fu">round</span>(return_level, <span class="dv">4</span>)))</span>
+<span id="cb13-173"><a href="#cb13-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-174"><a href="#cb13-174" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualization: Tail Plot (Log Scale)</span></span>
+<span id="cb13-175"><a href="#cb13-175" aria-hidden="true" tabindex="-1"></a><span class="co"># Shows how the GPD (Line) fits the actual historical crashes (Dots)</span></span>
+<span id="cb13-176"><a href="#cb13-176" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit_gpd, <span class="at">which =</span> <span class="dv">1</span>) <span class="co"># &#39;which=1&#39; usually plots Probability or Return Level</span></span>
+<span id="cb13-177"><a href="#cb13-177" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-178"><a href="#cb13-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-179"><a href="#cb13-179" aria-hidden="true" tabindex="-1"></a><span class="fu">## **The Bottom Line**</span></span>
+<span id="cb13-180"><a href="#cb13-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-181"><a href="#cb13-181" aria-hidden="true" tabindex="-1"></a>By running this code on the 2021–2025 dataset, we move from abstract philosophy to concrete risk management.</span>
+<span id="cb13-182"><a href="#cb13-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-183"><a href="#cb13-183" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>**Block Bootstrap** revealed that volatility clustering increases your 99% VaR by over **23%** compared to standard models (from -7.09% to -8.77%).</span>
+<span id="cb13-184"><a href="#cb13-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-185"><a href="#cb13-185" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>**EVT** provided a mathematical confirmation of the heavy tail (\$<span class="sc">\\</span>xi = 0.061\$), proving that extreme losses in Bitcoin are structural features, not bugs.</span>
+<span id="cb13-186"><a href="#cb13-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-187"><a href="#cb13-187" aria-hidden="true" tabindex="-1"></a>When the market inevitably breaks, you won’t be relying on a Bell Curve that claims the event is impossible. You will be relying on a GPD curve that told you it was coming.</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
