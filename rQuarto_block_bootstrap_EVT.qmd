@@ -10,9 +10,10 @@ format:
     code-tools: true
     code-summary: "Show code"
     embed-resources: true
+    embed-math: true
 ---
 
-::: callout-note
+::: {.callout-note icon="false"}
 **Value at Risk (VaR) vs. Extreme Value Theory (EVT): A Summary**
 
 **Value at Risk (VaR)** is the industry standard for measuring market risk. It answers a specific question: *"What is the maximum amount I am likely to lose over a set period, with a certain level of confidence (e.g., 99%)?"* It is excellent for summarizing "normal" market behavior and setting daily capital requirements. However, VaR has a critical blind spot: it tells you where the cliff edge is, but it tells you nothing about the fall. It ignores the severity of losses beyond its confidence threshold.
@@ -40,7 +41,7 @@ library(dplyr)
 library(boot)   # For Bootstrapping
 library(evd)    # For Extreme Value Theory (GPD fitting)
 
-options(scipen = 999)
+options(scipen = 999) # display real numbers, not scientific notation
 
 
 # Load the dataset
@@ -100,9 +101,9 @@ print(paste("Bootstrap VaR (99%):", round(mean(boot_vars$VaR), 4)))
 
 -   **Normal Prediction:** -7.09%
 
--   **Block Bootstrap Prediction:** -8.77%
+-   **Block Bootstrap Prediction:** -8.74%
 
-The Gaussian model predicts a loss of 7% on a bad day. The Bootstrap — respecting the actual texture of BTC volatility — warns you that the real number is closer to 8.77%. That 23% difference (8.77/7.09) is where bankruptcies happen.
+The Gaussian model predicts a loss of 7% on a bad day. The Bootstrap — respecting the actual texture of BTC volatility — warns you that the real number is closer to 8.75%. That 23% difference (8.74/7.09) is where bankruptcies could occur.
 
 **Visualizing the Divergence:** The density plot below visualizes this lie. The blue line (Normal) sits comfortably to the right, while the red mass (Bootstrap) shifts ominously to the left (greater loss).
 
