@@ -1,5 +1,7 @@
 project:
   title: "rQuarto_block_bootstrap_EVT"
-
+format:
+    html:
+        theme: sandstone
 editor: visual
 
