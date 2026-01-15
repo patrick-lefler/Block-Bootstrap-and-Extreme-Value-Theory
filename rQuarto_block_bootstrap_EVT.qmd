@@ -9,7 +9,18 @@ format:
     code-fold: true
     code-tools: true
     code-summary: "Show code"
+    embed-resources: true
 ---
+
+::: callout-note
+**Value at Risk (VaR) vs. Extreme Value Theory (EVT): A Summary**
+
+**Value at Risk (VaR)** is the industry standard for measuring market risk. It answers a specific question: *"What is the maximum amount I am likely to lose over a set period, with a certain level of confidence (e.g., 99%)?"* It is excellent for summarizing "normal" market behavior and setting daily capital requirements. However, VaR has a critical blind spot: it tells you where the cliff edge is, but it tells you nothing about the fall. It ignores the severity of losses beyond its confidence threshold.
+
+**Extreme Value Theory (EVT)** flips this logic. It ignores the "normal" days entirely and models only the extreme outliers—the worst 1% or 5% of events. By fitting a specific statistical curve (like the Generalized Pareto Distribution) to these rare disasters, EVT allows risk managers to extrapolate potential losses that exceed historical records.
+
+**The Key Difference:** VaR measures the **boundary** of safety ("We are safe 99 days out of 100"). EVT measures the **magnitude** of the catastrophe ("On that 100th day, the loss could be infinite"). VaR provides comfort; EVT provides survival stress-testing.
+:::
 
 In previous articles, it has been shown that standard risk models fail because they assume markets behave normally…but they don’t. And some markets–including Bitcoin–behave badly at times. They exhibit “clustering,” where volatility tends to bunch together, and “fat tails,” where outliers are more frequent.
 
