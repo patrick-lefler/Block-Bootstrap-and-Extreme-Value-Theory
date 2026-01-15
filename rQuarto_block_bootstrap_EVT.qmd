@@ -1,0 +1,168 @@
+---
+title: "Coding the Tail: Implementing Block Botstrap & Extreme Value Theory in R"
+execute:
+  warning: false
+  message: false
+format:
+  html: 
+    theme: sandstone
+    code-fold: true
+    code-tools: true
+    code-summary: "Show code"
+---
+
+In previous articles, it has been shown that standard risk models fail because they assume markets behave normally…but they don’t. And some markets–including Bitcoin–behave badly at times. They exhibit “clustering,” where volatility tends to bunch together, and “fat tails,” where outliers are more frequent.
+
+Strategic awareness is useful, but eventually, you have to run the numbers. You need code that doesn’t panic when the data gets messy.
+
+This guide provides a practical framework for implementing two robust risk techniques in R: the **Block Bootstrap** (to handle volatility clustering) and **Generalized Pareto Distribution (GPD)** fitting (to model the extreme tail).
+
+A historic dataset containing daily Bitcoin (BTC) prices from 2021 through 2025 will be used for this simple example.
+
+## **The Setup: Preparing the Environment**
+
+First, data is loaded, and daily log returns are calculated. Unlike the “smooth” data often used in textbooks, this dataset captures historic crypto volatility, including the drawdown periods.
+
+```{r setup}
+library(ggplot2)
+library(dplyr)
+library(boot)   # For Bootstrapping
+library(evd)    # For Extreme Value Theory (GPD fitting)
+
+options(scipen = 999)
+
+
+# Load the dataset
+# Ensure the file is in your working directory
+df <- read.csv("data/btc_daily_prices_2021-2025.csv")
+
+# Format dates and sort chronologically (vital for time-series bootstrapping)
+df$pricing.date <- as.Date(df$pricing.date)
+df <- df[order(df$pricing.date), ]
+
+# Calculate Daily Log Returns
+# We use log returns because they are additive over time
+returns <- diff(log(df$close.price))
+
+# Quick inspection of the "left tail" (max losses)
+print(summary(returns))
+```
+
+## **Method 1: The Block Bootstrap**
+
+Standard bootstrapping (shuffling data randomly) destroys the element of time. In crypto, bad days flock together. If Tuesday was a crash, Wednesday is likely to be volatile. If you shuffle the days randomly, you destroy this “autocorrelation” and underestimate the risk of a sustained drawdown.
+
+To fix this, we use the Block Bootstrap. We sample *blocks* of consecutive days (e.g., 20-day chunks) rather than single days. This preserves the “memory” of the market.
+
+```{r}
+# Define the statistic we want to measure: 99% Value at Risk (VaR)
+# VaR is the threshold where losses exceed this value only 1% of the time
+var_stat <- function(data, indices) {
+  d <- data[indices]
+  return(quantile(d, 0.01)) # 1st percentile (negative return)
+}
+
+# Run the Block Bootstrap
+# 'R' = 10,000 resamples (alternative histories)
+# 'l' = 20 (we keep 20 consecutive days together to preserve volatility clusters)
+set.seed(42)
+boot_results <- tsboot(tseries = returns, 
+                       statistic = var_stat, 
+                       R = 10000, 
+                       l = 20, 
+                       sim = "fixed")
+
+# Extract the bootstrapped VaR values
+boot_vars <- data.frame(VaR = boot_results$t)
+
+# Compare with the Standard Normal VaR (Gaussian assumption)
+mean_return <- mean(returns)
+std_dev <- sd(returns)
+normal_var <- qnorm(0.01, mean = mean_return, sd = std_dev)
+
+print(paste("Normal VaR (99%):", round(normal_var, 4)))
+print(paste("Bootstrap VaR (99%):", round(mean(boot_vars$VaR), 4)))
+
+```
+
+**The Results** When applied to the dataset, the difference is stark:
+
+-   **Normal Prediction:** -7.09%
+
+-   **Block Bootstrap Prediction:** -8.77%
+
+The Gaussian model predicts a loss of 7% on a bad day. The Bootstrap — respecting the actual texture of BTC volatility — warns you that the real number is closer to 8.77%. That 23% difference (8.77/7.09) is where bankruptcies happen.
+
+**Visualizing the Divergence:** The density plot below visualizes this lie. The blue line (Normal) sits comfortably to the right, while the red mass (Bootstrap) shifts ominously to the left (greater loss).
+
+```{r}
+# Visualization: The "Risk Gap" Density Plot
+ggplot(boot_vars, aes(x = VaR)) +
+  geom_density(fill = "#E74C3C", alpha = 0.6) +
+  geom_vline(aes(xintercept = normal_var), 
+             color = "blue", linetype = "dashed", linewidth = 1.2) +
+  labs(title = "The Risk Gap: Block Bootstrap vs. Normal Model",
+       subtitle = "Red Area = Bootstrap Prediction (Heavy Tail). Blue Line = Normal Prediction.",
+       x = "99% VaR (Daily Return)",
+       y = "Density") +
+  theme_minimal()
+```
+
+## **Method 2: Fitting the GPD (Extreme Value Theory)**
+
+Bootstrapping is limited to historical data. If you want to ask, “What is the probability of a crash worse than anything we have seen in the last 5 years?”, you need to utilize Extreme Value Theory (EVT).
+
+We will use the Peaks Over Threshold (POT) method. We look only at the worst 5% of days and fit a curve specifically to them.
+
+```{r}
+# 1. Isolate the Tail (Peaks Over Threshold)
+# We convert returns to losses (positive values) for the package
+losses <- -returns
+threshold <- quantile(losses, 0.95) # Top 5% of losses
+
+# 2. Fit the Generalized Pareto Distribution (GPD)
+fit_gpd <- fpot(losses, threshold = threshold)
+
+# Print the Shape Parameter (xi)
+# If xi > 0, it confirms a heavy tail (infinite variance potential)
+print(fit_gpd$estimate)
+```
+
+**The Results:**
+
+-   Shape Parameter (\$\\xi\$): 0.061
+
+-   Interpretation: The positive shape parameter confirms that Bitcoin’s distribution is heavy-tailed. It does not decay exponentially like a normal curve; it decays polynomially. This implies that “impossible” losses remain persistently possible.
+
+Calculating the “Return Level”: We can now calculate the 100-Day Return Level — the loss-magnitude expected to be exceeded once every 100 days.
+
+```{r}
+# 3. Calculate the Return Level (Manual Calculation)
+# We extract parameters to solve: P(X > x) = 1/Return_Period
+
+scale_param <- fit_gpd$estimate["scale"]
+shape_param <- fit_gpd$estimate["shape"]
+pat <- fit_gpd$pat  # Proportion Above Threshold (how often we are in the tail)
+
+# Define Risk Horizon: 1-in-100 days
+return_period <- 100 
+
+# The GPD Return Level Formula
+return_level <- threshold + (scale_param / shape_param) * ((return_period * pat)^shape_param - 1)
+
+print(paste("Expected 1-in-100 Day Loss (EVT):", round(return_level, 4)))
+
+# Visualization: Tail Plot (Log Scale)
+# Shows how the GPD (Line) fits the actual historical crashes (Dots)
+plot(fit_gpd, which = 1) # 'which=1' usually plots Probability or Return Level
+```
+
+## **The Bottom Line**
+
+By running this code on the 2021–2025 dataset, we move from abstract philosophy to concrete risk management.
+
+1.  **Block Bootstrap** revealed that volatility clustering increases your 99% VaR by over **23%** compared to standard models (from -7.09% to -8.77%).
+
+2.  **EVT** provided a mathematical confirmation of the heavy tail (\$\\xi = 0.061\$), proving that extreme losses in Bitcoin are structural features, not bugs.
+
+When the market inevitably breaks, you won’t be relying on a Bell Curve that claims the event is impossible. You will be relying on a GPD curve that told you it was coming.
