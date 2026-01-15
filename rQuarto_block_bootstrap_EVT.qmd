@@ -31,7 +31,7 @@ This guide provides a practical framework for implementing two robust risk techn
 
 A historic dataset containing daily Bitcoin (BTC) prices from 2021 through 2025 will be used for this simple example.
 
-## **The Setup: Preparing the Environment**
+### **The Setup: Preparing the Environment**
 
 First, data is loaded, and daily log returns are calculated. Unlike the “smooth” data often used in textbooks, this dataset captures historic crypto volatility, including the drawdown periods.
 
@@ -60,7 +60,7 @@ returns <- diff(log(df$close.price))
 print(summary(returns))
 ```
 
-## **Method 1: The Block Bootstrap**
+### **Method 1: The Block Bootstrap**
 
 Standard bootstrapping (shuffling data randomly) destroys the element of time. In crypto, bad days flock together. If Tuesday was a crash, Wednesday is likely to be volatile. If you shuffle the days randomly, you destroy this “autocorrelation” and underestimate the risk of a sustained drawdown.
 
@@ -120,7 +120,7 @@ ggplot(boot_vars, aes(x = VaR)) +
   theme_minimal()
 ```
 
-## **Method 2: Fitting the GPD (Extreme Value Theory)**
+### **Method 2: Fitting the GPD (Extreme Value Theory)**
 
 Bootstrapping is limited to historical data. If you want to ask, “What is the probability of a crash worse than anything we have seen in the last 5 years?”, you need to utilize Extreme Value Theory (EVT).
 
@@ -169,7 +169,7 @@ print(paste("Expected 1-in-100 Day Loss (EVT):", round(return_level, 4)))
 plot(fit_gpd, which = 1) # 'which=1' usually plots Probability or Return Level
 ```
 
-## **The Bottom Line**
+### **The Bottom Line**
 
 By running this code on the 2021–2025 dataset, we move from abstract philosophy to concrete risk management.
 
@@ -178,3 +178,5 @@ By running this code on the 2021–2025 dataset, we move from abstract philosoph
 2.  **EVT** provided a mathematical confirmation of the heavy tail (\$\\xi = 0.061\$), proving that extreme losses in Bitcoin are structural features, not bugs.
 
 When the market inevitably breaks, you won’t be relying on a Bell Curve that claims the event is impossible. You will be relying on a GPD curve that told you it was coming.
+
+
