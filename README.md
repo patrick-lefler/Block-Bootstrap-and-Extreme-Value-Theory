@@ -21,4 +21,22 @@ The provided R script performs a dual-track risk analysis on the btc_daily_price
 * Objective: To estimate the 99% Value at Risk (VaR) while preserving the autocorrelation (volatility clustering) of the time series.
 * Technique: Instead of random resampling (which destroys time structure), the script resamples 20-day contiguous blocks of returns.
 * Comparison: It calculates the standard Normal VaR versus the Bootstrapped VaR to quantify the "Risk Gap."
-3. Method B: Extreme Value Theory (EVT)Objective: To model the behavior of the extreme tail and extrapolate potential losses beyond historical maximums.Technique: Uses the Peaks Over Threshold (POT) method.Threshold: Sets the threshold at the 95th percentile of losses.Distribution: Fits a Generalized Pareto Distribution (GPD) to the excesses above this threshold.Metric: Calculates the 100-Day Return Level (the magnitude of loss expected to be exceeded once every 100 days).Key Findings (Based on 2021-2025 Data)The analysis reveals a significant underestimation of risk by standard models:The Risk Gap:Normal Distribution Prediction (99% VaR): -7.09%Block Bootstrap Prediction (99% VaR): -8.77%Insight: The standard model underestimates the daily capital requirement by approximately 1.7%, a critical margin for leveraged portfolios.The Tail Shape:Shape Parameter ($\xi$): 0.061Insight: A positive shape parameter confirms the distribution is heavy-tailed (infinite variance potential), invalidating models that assume exponential decay.DependenciesThe analysis utilizes the following R libraries:ggplot2 (Visualization)dplyr (Data manipulation)boot (Bootstrapping functions)evd (Extreme Value Distributions)
+3. Method B: Extreme Value Theory (EVT)
+* Objective: To model the behavior of the extreme tail and extrapolate potential losses beyond historical maximums.
+* Technique: Uses the Peaks Over Threshold (POT) method.
+* Threshold: Sets the threshold at the 95th percentile of losses.
+* Distribution: Fits a Generalized Pareto Distribution (GPD) to the excesses above this threshold.
+* Metric: Calculates the 100-Day Return Level (the magnitude of loss expected to be exceeded once every 100 days).
+
+### Key Findings (Based on 2021-2025 Data)
+The analysis reveals a significant underestimation of risk by standard models:
+1. The Risk Gap:
+* Normal Distribution Prediction (99% VaR): -7.09%
+* Block Bootstrap Prediction (99% VaR): -8.77%
+* Insight: The standard model underestimates the daily capital requirement by approximately 1.7%, a critical margin for leveraged portfolios.
+2. The Tail Shape:
+* Shape Parameter ($\xi$): 0.061
+* Insight: A positive shape parameter confirms the distribution is heavy-tailed (infinite variance potential), invalidating models that assume exponential decay.
+
+### Dependencies
+The analysis utilizes the following R libraries:ggplot2 (Visualization)dplyr (Data manipulation)boot (Bootstrapping functions)evd (Extreme Value Distributions)
