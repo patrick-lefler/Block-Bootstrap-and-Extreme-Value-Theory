@@ -1,5 +1,5 @@
 ---
-title: "Coding the Tail: Implementing Block Botstrap & Extreme Value Theory in R"
+title: "Coding the Tail: Implementing Block Bootstrap & Extreme Value Theory in R"
 execute:
   warning: false
   message: false
