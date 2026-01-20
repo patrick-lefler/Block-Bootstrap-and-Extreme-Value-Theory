@@ -1,5 +1,7 @@
 # Block-Bootstrap-and-Extreme-Value-Theory
 
+The R Quarto visualization can be found here: https://patrick-lefler.github.io/Block-Bootstrap-and-Extreme-Value-Theory/
+
 This project contains the technical framework and narrative summary for "Coding the Tail: Implementing Block Bootstrap and EVT in R." It provides a practical demonstration of how to quantify tail risk in high-volatility assets (specifically Bitcoin) using advanced statistical methods that outperform standard Gaussian models.Article 
 
 ### Summary 
