@@ -3,7 +3,7 @@
 The R Quarto output can be found here: https://patrick-lefler.github.io/Block-Bootstrap-and-Extreme-Value-Theory/
 
 ![R](https://img.shields.io/badge/Language-R-blue)
-![Framework](https://img.shields.io/badge/Framework-Boot-orange)
+![Library](https://img.shields.io/badge/Framework-Boot-orange)
 ![Framework](https://img.shields.io/badge/Framework-EVD-red)
 ![Report](https://img.shields.io/badge/Format-Quarto-green)
 
