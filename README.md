@@ -3,7 +3,7 @@
 The R Quarto output can be found here: https://patrick-lefler.github.io/Block-Bootstrap-and-Extreme-Value-Theory/
 
 ![R](https://img.shields.io/badge/Language-R-blue)
-![Framework](https://img.shields.io/badge/Framework-Tidymodels-orange)
+![Framework](https://img.shields.io/badge/Framework-Boot-orange)
 ![Report](https://img.shields.io/badge/Format-Quarto-green)
 
 This project contains the technical framework and narrative summary for "Coding the Tail: Implementing Block Bootstrap and EVT in R." It provides a practical demonstration of how to quantify tail risk in high-volatility assets (specifically Bitcoin) using advanced statistical methods that outperform standard Gaussian models. 
