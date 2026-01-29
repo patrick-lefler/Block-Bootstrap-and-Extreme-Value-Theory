@@ -1,21 +1,24 @@
 ---
 title: "Coding the Tail: Implementing Block Bootstrap & Extreme Value Theory in R"
-format:
-  html: 
-    theme: sandstone
-    page-layout: full
-    toc: true
-    toc-depth: 3
-    code-tools: true
+subtitle: "Exploring the Differences in Fat Tail Loss Estimates Between VaR and EVT"
+format: 
+  html:
+    code-fold: true
+    code-line-numbers: false
+    code-overflow: wrap
     code-summary: "Display code"
+    code-tools: true
+    df-print: paged
     embed-resources: true
     embed-math: true
-    code-fold: true
-    df-print: paged
     linkcolor: "#0000EE"
+    page-layout: full
+    theme: sandstone
+    toc: true
+    toc-depth: 3
 execute:
-  warning: false
   message: false
+  warning: false
 ---
 
 In previous analyses, we demonstrated that standard risk models—specifically those relying on Value at Risk (VaR) calculated via the Normal distribution—fail because they assume markets follow normal, bell-shaped rules. Real markets do not. Assets like Bitcoin behave badly, exhibiting "clustering," where periods of high volatility stick together like glue, and "fat tails," where outliers occur with a frequency that defies Gaussian logic. While standard VaR might effectively manage the risk of a typical Tuesday, it is structurally blind to the Black Swan. To map the true dimensions of the cliff edge, we must turn to Extreme Value Theory (EVT), the only statistical framework explicitly designed to measure the events that "shouldn't" happen but inevitably do.
