@@ -12,6 +12,7 @@ format:
     embed-math: true
     code-fold: true
     df-print: paged
+    linkcolor: "#0000EE"
 execute:
   warning: false
   message: false
